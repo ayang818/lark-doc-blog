@@ -19,7 +19,6 @@ def get_t_token():
     resp = requests.post(url='https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', headers={'content-type': 'application/json; charset=utf-8'}, json={"app_id": app_id, "app_secret": app_secret})
     return json.loads(resp.text)['tenant_access_token']
 
-print(get_t_token())
 
 @app.route("/redirect")
 def redirect():
@@ -31,5 +30,6 @@ def redirect():
     logging.info("user access_token is = %s" % token)
     return token
 
-# app.run("127.0.0.1", 5000)
+if __name__ == "__main__":
+    app.run("127.0.0.1", 5000)
 
