@@ -1,15 +1,20 @@
 # encoding: utf-8
+import requests
 from fsutil import getj, postj
-from get_user_access_token import get_t_token
+from local_server import get_t_token
 
-# 如果过期了，就去 refresh_token
-user_token = "u-byZo4Q2HYLGz39J3vJp2Ph"
 
 def get_user_token():
     """
+    TODO 如果过期了，就去 refresh_token。获取
     click here: https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=http://127.0.0.1:5000/redirect&app_id=cli_a1093f4447f9d00c&state=1
     """
-    pass 
+    token = requests.get("http://127.0.0.1:5000/token").text
+    print("get token %s" % (token,))
+    return token
+
+# 如果过期了，就去 refresh_token
+user_token = get_user_token()
 
 def get_operate_member_collection(file_token, file_type):
     """
