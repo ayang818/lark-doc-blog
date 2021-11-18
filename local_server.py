@@ -4,15 +4,12 @@ import logging
 import requests
 import json
 from conf import *
+from api import get_t_token, get_doc_content_by_file_token, get_file_token_by_wiki_token
 
 logging.getLogger().setLevel(logging.INFO)
 
 app = Flask(__name__)
 user_token = ""
-
-def get_t_token():
-    resp = requests.post(url='https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', headers={'content-type': 'application/json; charset=utf-8'}, json={"app_id": app_id, "app_secret": app_secret})
-    return json.loads(resp.text)['tenant_access_token']
 
 @app.route("/")
 def index():
@@ -34,6 +31,18 @@ def redirect():
 def get_user_token():
     global user_token
     return user_token
+
+t_token = get_t_token()
+
+@app.route("/doc/<wiki_token>")
+def doc_content(wiki_token):
+    """
+    获取文档 json 格式内容；参照
+    """
+    global t_token
+    file_token, _ = get_file_token_by_wiki_token(t_token, wiki_token)
+    doc_content = get_doc_content_by_file_token(t_token, file_token)
+    return doc_content 
 
 if __name__ == "__main__":
     app.run("127.0.0.1", 5000)

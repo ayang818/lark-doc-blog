@@ -1,8 +1,12 @@
 # encoding: utf-8
 import requests
 from fsutil import getj, postj
-from local_server import get_t_token
+import json
+from conf import *
 
+def get_t_token():
+    resp = requests.post(url='https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', headers={'content-type': 'application/json; charset=utf-8'}, json={"app_id": app_id, "app_secret": app_secret})
+    return json.loads(resp.text)['tenant_access_token']
 
 def get_user_token():
     """
@@ -14,13 +18,16 @@ def get_user_token():
     return token
 
 # 如果过期了，就去 refresh_token
-user_token = get_user_token()
+user_token = None
 
 def get_operate_member_collection(file_token, file_type):
     """
     获取文档协作者列表
     https://open.feishu.cn/document/ukTMukTMukTM/uATN3UjLwUzN14CM1cTN
     """
+    global user_token
+    if not user_token:
+        user_token = get_user_token()
     return postj("https://open.feishu.cn/open-apis/drive/permission/member/list", user_token, json_data={"token": file_token, "type": file_type})
 
 def get_file_token_by_wiki_token(token, wiki_token):
@@ -37,6 +44,9 @@ def add_app_as_space_member(app_open_id):
     """
     添加应用为知识空间成员 
     """
+    global user_token
+    if not user_token:
+        user_token = get_user_token()
     space_id = "7011396001814544388"
     # url = "https://open.feishu.cn/open-apis/wiki/v2/spaces/%s" % (space_id)
     url = "https://open.feishu.cn/open-apis/wiki/v2/spaces/%s/members" % (space_id)
@@ -62,6 +72,28 @@ def get_nodes_by_space_id(token, space_id):
 def get_doc_content_by_file_token(token, file_token):
     return getj("https://open.feishu.cn/open-apis/doc/v2/%s/content" % (file_token, ), access_token=token)
 
+"""
+所有的 parse 函数都会返回一段 html 代码.
+TODO 这些解析应该放到前端去做
+"""
+def parse_block(block_data : str) -> str:
+    pass
+
+def parse_title(title_data : str) -> str:
+    """
+    解析文件头
+    """
+    elements: list = title_data['elements']
+    style: dict = title_data['style']
+    align_style = style.get('align')
+    
+
+def parse_doc(data : str) -> str:
+    doc, version = data['content'], data['revision']
+    jdata = json.loads(doc)
+    print(jdata['title'])
+    print("============")
+    print(jdata['body'])
 
 if __name__ == "__main__":
     # =========================获取应用的 open_id
@@ -90,9 +122,13 @@ if __name__ == "__main__":
     # =========================
 
     # =========================测试文件内容
-    file_token, file_type = get_file_token_by_wiki_token(token=t_token, wiki_token="wikcnyU2kVaOweDj7ceu5FjPSAd")
-    print(get_doc_content_by_file_token(t_token, file_token))
+    file_token, file_type = get_file_token_by_wiki_token(token=t_token, wiki_token="wikcnvFapTea0i1ekiEyj3cnfRh")
+    print(file_token)
+    doc_data = get_doc_content_by_file_token(t_token, file_token)
     # =========================
 
+
     # TODO 解析文档内容并显示到前端
+    
+    parse_doc(doc_data)
 
