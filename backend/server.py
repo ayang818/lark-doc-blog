@@ -10,13 +10,18 @@ logging.getLogger().setLevel(logging.INFO)
 
 app = Flask(__name__)
 user_token = ""
+t_token = get_t_token()
 
+# ================ 测试接口 ================
 @app.route("/")
 def index():
     return '点击链接生成user_token <a href="%s">飞书开放平台登录</a>' % (get_code_url,)
 
 @app.route("/redirect")
 def redirect():
+    """
+    首先需要登录 http://localhost:5000/ 获取 user_token
+    """
     code = request.args['code']
     logging.info("code=%s", code)
     resp = requests.post('https://open.feishu.cn/open-apis/authen/v1/access_token', headers={'Authorization': 'Bearer %s' % (get_t_token()), 'Content-Type': "application/json; charset=utf-8"}, json={"code": code, "grant_type": "authorization_code"})
@@ -31,8 +36,7 @@ def redirect():
 def get_user_token():
     global user_token
     return user_token
-
-t_token = get_t_token()
+# ================ 测试接口 ================
 
 @app.route("/doc/<wiki_token>")
 def doc_content(wiki_token):
@@ -42,7 +46,9 @@ def doc_content(wiki_token):
     global t_token
     file_token, _ = get_file_token_by_wiki_token(t_token, wiki_token)
     doc_content = get_doc_content_by_file_token(t_token, file_token)
-    return doc_content 
+    return doc_content
+
+# @app.route("/list/<>")
 
 if __name__ == "__main__":
     app.run("127.0.0.1", 5000)
