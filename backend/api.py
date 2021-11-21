@@ -2,7 +2,13 @@
 import requests
 from fsutil import getj, postj
 import json
+import conf
 from conf import *
+
+for c in conf.__dict__:
+    if str(c).startswith("__"):
+        continue
+    print("conf: %s=%s" % (c, conf.__dict__[c]))
 
 def get_t_token():
     resp = requests.post(url='https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', headers={'content-type': 'application/json; charset=utf-8'}, json={"app_id": app_id, "app_secret": app_secret})
