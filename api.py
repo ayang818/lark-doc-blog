@@ -72,11 +72,14 @@ def get_space_info(token, space_id):
     # , data={"space_id": space_id}
     return getj("https://open.feishu.cn/open-apis/wiki/v2/spaces/%s" % (space_id, ), access_token=token)
 
-def get_nodes_by_space_id(token, space_id):
-    return getj("https://open.feishu.cn/open-apis/wiki/v2/spaces/%s/nodes" % (space_id,), access_token=token, data={"page_size": 50})
+def get_children_nodes(token, space_id, node_token=None):
+    return getj("https://open.feishu.cn/open-apis/wiki/v2/spaces/%s/nodes" % (space_id,), access_token=token, data={"page_size": 50, 'parent_node_token': node_token})
 
 def get_doc_content_by_file_token(token, file_token):
     return getj("https://open.feishu.cn/open-apis/doc/v2/%s/content" % (file_token, ), access_token=token)
+
+def get_node_msg(token, wiki_token):
+    return getj('https://open.feishu.cn/open-apis/wiki/v2/spaces/get_node', access_token=token, data={'token': wiki_token})
 
 """
 所有的 parse 函数都会返回一段 html 代码.
