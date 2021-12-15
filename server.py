@@ -45,6 +45,17 @@ def get_user_token():
     return user_token
 # ================ 测试接口 ================
 
+def refresh_token(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            traceback.print_exc()
+            global t_token
+            t_token = get_t_token()
+            # TODO 要不要自动做重试呢？
+            return func(*args, **kwargs)
+    return wrapper
 
 @app.route("/doc/<wiki_token>")
 def doc_content(wiki_token):
@@ -56,6 +67,7 @@ def doc_content(wiki_token):
     return doc_content
 
 
+@refresh_token
 @app.route("/node/<wiki_token>/children")
 def get_node_children(wiki_token):
     if wiki_token == 'default':
@@ -63,8 +75,8 @@ def get_node_children(wiki_token):
     resp = get_children_nodes(t_token, space_id, wiki_token)
     return {'children': [
         {
-            'node_token': it.get('node_token'),
-            'wiki_token': it.get('obj_token'),
+            'wiki_token': it.get('node_token'),
+            'doc_token': it.get('obj_token'),
             'title': it.get('title'),
             'parent_node_token': it.get('parent_node_token'),
             'node_type': it.get('node_type')} for it in resp.get('items', [])]}
