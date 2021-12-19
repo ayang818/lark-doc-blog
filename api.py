@@ -1,5 +1,8 @@
 # encoding: utf-8
+from enum import auto
+import logging
 import requests
+from werkzeug.datastructures import Authorization
 from fsutil import getj, postj
 import json
 import conf
@@ -9,6 +12,14 @@ for c in conf.__dict__:
     if str(c).startswith("__"):
         continue
     print("conf: %s=%s" % (c, conf.__dict__[c]))
+
+def autoraise(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            raise e
+    return wrapper
 
 def get_t_token():
     resp = requests.post(url='https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', headers={'content-type': 'application/json; charset=utf-8'}, json={"app_id": app_id, "app_secret": app_secret})
@@ -26,6 +37,7 @@ def get_user_token():
 # 如果过期了，就去 refresh_token
 user_token = None
 
+@autoraise
 def get_operate_member_collection(file_token, file_type):
     """
     获取文档协作者列表
@@ -36,6 +48,7 @@ def get_operate_member_collection(file_token, file_type):
         user_token = get_user_token()
     return postj("https://open.feishu.cn/open-apis/drive/permission/member/list", user_token, json_data={"token": file_token, "type": file_type})
 
+@autoraise
 def get_file_token_by_wiki_token(token, wiki_token):
     """
     通过 wiki_token 获取 file_token
@@ -46,6 +59,7 @@ def get_file_token_by_wiki_token(token, wiki_token):
     data = resp["node"]
     return data['obj_token'], data['obj_type']
 
+@autoraise
 def add_app_as_space_member(app_open_id):
     """
     添加应用为知识空间成员 
@@ -60,6 +74,7 @@ def add_app_as_space_member(app_open_id):
     resp = postj(url=url, access_token=user_token, json_data=body)
     return resp
 
+@autoraise
 def get_space_list(token, page_size):
     """
     通过 token 获取 知识空间列表
@@ -68,41 +83,27 @@ def get_space_list(token, page_size):
     resp = getj(url, access_token=token)
     return resp
 
+@autoraise
 def get_space_info(token, space_id):
     # , data={"space_id": space_id}
     return getj("https://open.feishu.cn/open-apis/wiki/v2/spaces/%s" % (space_id, ), access_token=token)
 
+@autoraise
 def get_children_nodes(token, space_id, node_token=None):
     return getj("https://open.feishu.cn/open-apis/wiki/v2/spaces/%s/nodes" % (space_id,), access_token=token, data={"page_size": 50, 'parent_node_token': node_token})
 
+@autoraise
 def get_doc_content_by_file_token(token, file_token):
     return getj("https://open.feishu.cn/open-apis/doc/v2/%s/content" % (file_token, ), access_token=token)
 
+@autoraise
 def get_node_msg(token, wiki_token):
     return getj('https://open.feishu.cn/open-apis/wiki/v2/spaces/get_node', access_token=token, data={'token': wiki_token})
 
-"""
-所有的 parse 函数都会返回一段 html 代码.
-TODO 这些解析应该放到前端去做
-"""
-def parse_block(block_data : str) -> str:
-    pass
-
-def parse_title(title_data : str) -> str:
-    """
-    解析文件头
-    """
-    elements: list = title_data['elements']
-    style: dict = title_data['style']
-    align_style = style.get('align')
-    
-
-def parse_doc(data : str) -> str:
-    doc, version = data['content'], data['revision']
-    jdata = json.loads(doc)
-    print(jdata['title'])
-    print("============")
-    print(jdata['body'])
+@autoraise
+def get_doc_media_by_file_token(token, file_token):
+    headers = {"Authorization": "Bearer %s" % (token, )}
+    return requests.get('https://open.feishu.cn/open-apis/drive/v1/medias/%s/download' % (file_token), headers=headers).content
 
 if __name__ == "__main__":
     # =========================获取应用的 open_id
@@ -131,13 +132,11 @@ if __name__ == "__main__":
     # =========================
 
     # =========================测试文件内容
-    file_token, file_type = get_file_token_by_wiki_token(token=t_token, wiki_token="wikcnvFapTea0i1ekiEyj3cnfRh")
-    print(file_token)
-    doc_data = get_doc_content_by_file_token(t_token, file_token)
+    # file_token, file_type = get_file_token_by_wiki_token(token=t_token, wiki_token="wikcnvFapTea0i1ekiEyj3cnfRh")
+    # print(file_token)
+    # doc_data = get_doc_content_by_file_token(t_token, file_token)
     # =========================
 
-
-    # TODO 解析文档内容并显示到前端
     
-    parse_doc(doc_data)
+    open('1.png', 'wb').write(get_doc_media_by_file_token(t_token, 'boxcnZEHVyiq6zzuewU0aciRqth'))    
 
