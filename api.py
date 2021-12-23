@@ -16,7 +16,9 @@ for c in conf.__dict__:
 def autoraise(func):
     def wrapper(*args, **kwargs):
         try:
-            return func(*args, **kwargs)
+            res = func(*args, **kwargs)
+            # logging.info("%s resp: %s" % (func.__name__, res), )
+            return res
         except Exception as e:
             raise e
     return wrapper
@@ -97,13 +99,19 @@ def get_doc_content_by_file_token(token, file_token):
     return getj("https://open.feishu.cn/open-apis/doc/v2/%s/content" % (file_token, ), access_token=token)
 
 @autoraise
-def get_node_msg(token, wiki_token):
+def get_node_meta_msg(token, wiki_token):
     return getj('https://open.feishu.cn/open-apis/wiki/v2/spaces/get_node', access_token=token, data={'token': wiki_token})
 
 @autoraise
 def get_doc_media_by_file_token(token, file_token):
     headers = {"Authorization": "Bearer %s" % (token, )}
     return requests.get('https://open.feishu.cn/open-apis/drive/v1/medias/%s/download' % (file_token), headers=headers).content
+
+
+@autoraise
+def get_docs_metadata_msg(token, request_docs):
+    return postj('https://open.feishu.cn/open-apis/suite/docs-api/meta', access_token=token, json_data=request_docs)
+
 
 if __name__ == "__main__":
     # =========================获取应用的 open_id

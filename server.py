@@ -6,8 +6,9 @@ import requests
 import json
 from conf import *
 from flask_cors import CORS
-from api import get_t_token, get_doc_content_by_file_token, get_file_token_by_wiki_token, get_children_nodes, get_node_msg, get_doc_media_by_file_token
+from api import get_t_token, get_doc_content_by_file_token, get_file_token_by_wiki_token, get_children_nodes, get_node_meta_msg, get_doc_media_by_file_token, get_docs_metadata_msg
 import traceback
+import functools
 logging.getLogger().setLevel(logging.INFO)
 
 app = Flask(__name__)
@@ -17,7 +18,6 @@ user_token = ""
 t_token = get_t_token()
 
 # ================ 测试接口 ================
-
 @app.route("/")
 def index():
     return '点击链接生成user_token <a href="%s">飞书开放平台登录</a><br/> t_token: %s' % (get_code_url, t_token)
@@ -46,13 +46,14 @@ def get_user_token():
     return user_token
 # ================ 测试接口 ================
 
+# 不管 3 7 21 refresh 了再说
 def refresh_token(func):
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            logging.info("comming")
             return func(*args, **kwargs)
         except Exception as e:
-            # traceback.print_exc()
+            traceback.print_exc()
             logging.error("token expired! refresh token")
             global t_token
             t_token = get_t_token()
@@ -61,6 +62,7 @@ def refresh_token(func):
     return wrapper
 
 @app.route("/doc/<wiki_token>")
+@refresh_token
 def doc_content(wiki_token):
     """
     获取文档 json 格式内容；参照
@@ -69,6 +71,22 @@ def doc_content(wiki_token):
     doc_content = get_doc_content_by_file_token(t_token, file_token)
     return doc_content
 
+@app.route("/doc/metadata", methods=['POST'])
+@refresh_token
+def docs_meta_data():
+    # 批量获取时间接口
+    body = json.loads(request.get_data())
+    reqList = body.get('req')
+    token_list = []
+    for item in reqList:
+        token_list.append(
+            {'docs_token': item.get('docsToken'),
+            'docs_type': item.get('docsType')})
+    request_docs = {
+        'request_docs': token_list
+    }
+    resp = get_docs_metadata_msg(t_token, request_docs)
+    return resp
 
 @app.route("/node/<wiki_token>/children")
 # refresh token 必须放在里面
@@ -83,9 +101,12 @@ def get_node_children(wiki_token):
             'doc_token': it.get('obj_token'),
             'title': it.get('title'),
             'parent_node_token': it.get('parent_node_token'),
-            'node_type': it.get('node_type')} for it in resp.get('items', [])]}
+            'doc_type': it.get('obj_type'),
+            'node_type': it.get('node_type'),
+            'has_child': it.get('has_child')} for it in resp.get('items', [])]}
 
 @app.route('/download/<file_token>')
+@refresh_token
 def download_media(file_token):
     if not file_token:
         return ''
@@ -95,3 +116,4 @@ def download_media(file_token):
 
 if __name__ == "__main__":
     app.run("127.0.0.1", 5000)
+
