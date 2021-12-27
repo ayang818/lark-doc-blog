@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.INFO,
                     filemode='a'
                     )
 
+Flask.logger_name = 'logger'
 app = Flask(__name__)
 cors = CORS(app, supports_credentials=True)
 user_token = ""
