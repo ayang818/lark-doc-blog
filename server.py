@@ -10,6 +10,10 @@ from api import get_t_token, get_doc_content_by_file_token, get_file_token_by_wi
 import traceback
 import functools
 logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO,
+                    filename='lark-doc-blog-py.log',
+                    filemode='a'
+                    )
 
 app = Flask(__name__)
 cors = CORS(app, supports_credentials=True)
@@ -18,6 +22,8 @@ user_token = ""
 t_token = get_t_token()
 
 # ================ 测试接口 ================
+
+
 @app.route("/")
 def index():
     return '点击链接生成user_token <a href="%s">飞书开放平台登录</a><br/> t_token: %s' % (get_code_url, t_token)
@@ -47,6 +53,8 @@ def get_user_token():
 # ================ 测试接口 ================
 
 # 不管 3 7 21 refresh 了再说
+
+
 def refresh_token(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -57,9 +65,10 @@ def refresh_token(func):
             logging.error("token expired! refresh token")
             global t_token
             t_token = get_t_token()
-            # TODO 要不要自动做重试呢？
+            # 自动做重试
             return func(*args, **kwargs)
     return wrapper
+
 
 @app.route("/doc/<wiki_token>")
 @refresh_token
@@ -71,6 +80,7 @@ def doc_content(wiki_token):
     doc_content = get_doc_content_by_file_token(t_token, file_token)
     return doc_content
 
+
 @app.route("/doc/metadata", methods=['POST'])
 @refresh_token
 def docs_meta_data():
@@ -81,12 +91,13 @@ def docs_meta_data():
     for item in reqList:
         token_list.append(
             {'docs_token': item.get('docsToken'),
-            'docs_type': item.get('docsType')})
+             'docs_type': item.get('docsType')})
     request_docs = {
         'request_docs': token_list
     }
     resp = get_docs_metadata_msg(t_token, request_docs)
     return resp
+
 
 @app.route("/node/<wiki_token>/children")
 # refresh token 必须放在里面
@@ -105,6 +116,7 @@ def get_node_children(wiki_token):
             'node_type': it.get('node_type'),
             'has_child': it.get('has_child')} for it in resp.get('items', [])]}
 
+
 @app.route('/download/<file_token>')
 @refresh_token
 def download_media(file_token):
@@ -115,5 +127,4 @@ def download_media(file_token):
 
 
 if __name__ == "__main__":
-    app.run("127.0.0.1", 5000)
-
+    app.run("localhost", 5000)
