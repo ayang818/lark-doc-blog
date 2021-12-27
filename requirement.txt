@@ -3,4 +3,3 @@ gunicorn
 gevent
 requests
 flask_cors
-fcntl
