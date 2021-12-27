@@ -1,8 +1,6 @@
 # encoding: utf-8
-from enum import auto
 import logging
 import requests
-from werkzeug.datastructures import Authorization
 from fsutil import getj, postj
 import json
 import conf
