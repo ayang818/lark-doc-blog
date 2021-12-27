@@ -63,6 +63,7 @@ def refresh_token(func):
             return func(*args, **kwargs)
         except Exception as e:
             traceback.print_exc()
+            logging.error(e)
             logging.error("token expired! refresh token")
             global t_token
             t_token = get_t_token()
